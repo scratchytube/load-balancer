@@ -11,6 +11,7 @@ A lightweight HTTP reverse proxy load balancer that distributes requests across 
 
 ## Architecture
 
+  ```text
   Client
   ↓
   Load Balancer (localhost:8000)
@@ -19,13 +20,13 @@ A lightweight HTTP reverse proxy load balancer that distributes requests across 
   
   The load balancer routes traffic only to healthy servers.  
   If a backend stops responding, it is automatically removed from rotation.
+  ```
 
 ## Running Locally
 
   ### 1) Start backend servers
     Open three terminals:
     
-    ```bash
     python backends/server1.py
     python backends/server2.py
     python backends/server3.py
@@ -35,7 +36,7 @@ A lightweight HTTP reverse proxy load balancer that distributes requests across 
     python balancer.py
 
 ## Testing
-
+  ```text
   GET Request
   curl http://localhost:8000
 
