@@ -1,0 +1,183 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: #0f1117;
+  color: #e2e8f0;
+  min-height: 100vh;
+  padding: 2rem;
+}
+
+h1 {
+  text-align: center;
+  font-size: 1.6rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+  text-transform: uppercase;
+  margin-bottom: 2rem;
+}
+
+/* ── Server cards ── */
+
+.servers {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.card {
+  background: #1e2130;
+  border: 1px solid #2d3148;
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  width: 200px;
+  transition: border-color 0.3s;
+}
+
+.card.healthy   { border-color: #22c55e; }
+.card.unhealthy { border-color: #ef4444; }
+.card.stopped   { border-color: #475569; }
+
+.card-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+}
+
+.card-port {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-bottom: 1rem;
+}
+
+.card-badges {
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+}
+
+.badge::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.badge.green { color: #22c55e; background: #14532d44; }
+.badge.red   { color: #ef4444; background: #7f1d1d44; }
+.badge.gray  { color: #64748b; background: #1e293b; }
+
+/* ── Buttons on cards ── */
+
+.btn {
+  border: none;
+  border-radius: 6px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.btn:hover { opacity: 0.8; }
+
+.btn-kill  { background: #7f1d1d; color: #fca5a5; margin-right: 0.4rem; }
+.btn-start { background: #14532d; color: #86efac; }
+
+/* ── Send request section ── */
+
+.controls {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.btn-send {
+  background: #3b82f6;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.6rem 1.6rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-send:hover    { background: #2563eb; }
+.btn-send:disabled { background: #334155; cursor: not-allowed; }
+
+.last-response {
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+  color: #94a3b8;
+  min-height: 1.2em;
+}
+
+.last-response .highlight { color: #38bdf8; font-weight: 600; }
+.last-response .error     { color: #ef4444; font-weight: 600; }
+
+/* ── Request log ── */
+
+.log-section {
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.log-title {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #475569;
+  margin-bottom: 0.5rem;
+}
+
+.log {
+  background: #1e2130;
+  border: 1px solid #2d3148;
+  border-radius: 10px;
+  height: 220px;
+  overflow-y: auto;
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+.log-entry {
+  font-size: 0.8rem;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid #2d314822;
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.log-time   { color: #475569; min-width: 5rem; }
+.log-server { font-weight: 600; }
+.log-server.s1  { color: #38bdf8; }
+.log-server.s2  { color: #a78bfa; }
+.log-server.s3  { color: #fb923c; }
+.log-server.err { color: #ef4444; }
+.log-status { color: #64748b; font-size: 0.72rem; }
+
+.log::-webkit-scrollbar       { width: 4px; }
+.log::-webkit-scrollbar-track { background: transparent; }
+.log::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }

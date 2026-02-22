@@ -6,9 +6,11 @@ threading - lets us run background tasks in parallel
 time - gives us sleep(), which we will use to pause between checks
 '''
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from socketserver import ThreadingMixIn
 import requests
 import threading
 import time
+import json
 
 # List of backend server URLs
 backend_servers = [
@@ -20,17 +22,37 @@ backend_servers = [
 # tracks health status of each backend server (default: healthy)
 server_health = {url: True for url in backend_servers}
 
-# Round-robin index we're starting at 0
+# Round-robin index and a lock to protect it across threads
 current_server = 0
+round_robin_lock = threading.Lock()
 
 # class to handle all incoming http requests to load balancer
 class LoadBalancerHandler(BaseHTTPRequestHandler):
-    # runs every time we receive a get request
+    def do_OPTIONS(self):
+        self.send_response(204)
+        self._send_cors_headers()
+        self.end_headers()
+
     def do_GET(self):
-        self.forward_request(method = "GET")
-    # runs every time we get a post request
+        if self.path == "/status":
+            self._handle_status()
+        else:
+            self.forward_request(method="GET")
+
     def do_POST(self):
-        self.forward_request(method = "POST")
+        self.forward_request(method="POST")
+
+    def _send_cors_headers(self):
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+
+    def _handle_status(self):
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self._send_cors_headers()
+        self.end_headers()
+        self.wfile.write(json.dumps(server_health).encode())
 
     def forward_request(self, method):
         # modifies a variable outside our class
@@ -39,8 +61,9 @@ class LoadBalancerHandler(BaseHTTPRequestHandler):
         healthy_servers = [url for url in backend_servers if server_health.get(url, False)]
         # If no healthy servers are available, return a 503 error
         if not healthy_servers:
-            self.send_response(503)  # Service Unavailable
+            self.send_response(503)
             self.send_header("Content-type", "application/json")
+            self._send_cors_headers()
             self.end_headers()
             
             error_msg = '{"error": "No healthy backend servers available"}'
@@ -49,41 +72,34 @@ class LoadBalancerHandler(BaseHTTPRequestHandler):
         
         
         # pick the next healthy server using round-robin logic
-        backend_url = healthy_servers[current_server % len(healthy_servers)]
-        current_server = (current_server + 1) % len(healthy_servers)
+        # lock ensures two concurrent requests can't read/write the index at the same time
+        with round_robin_lock:
+            backend_url = healthy_servers[current_server % len(healthy_servers)]
+            current_server = (current_server + 1) % len(healthy_servers)
 
         try:
+            target_url = backend_url + self.path
             if method == "GET":
-                # sends a get request to selected backend
-                response = requests.get(backend_url)
+                response = requests.get(target_url)
             elif method == "POST":
-                # figures out how many bytes of data are in the request body
                 content_length = int(self.headers.get("Content-Length", 0))
-                #actually reads the body data
                 post_data = self.rfile.read(content_length)
-                # forwards the data to the backend with the content type as json
                 response = requests.post(
-                    backend_url, 
-                    data = post_data, 
+                    target_url,
+                    data=post_data,
                     headers={"Content-Type": self.headers["Content-Type"]}
                 )
 
-            # sends back a http code (200, 500)
             self.send_response(response.status_code)
-            # tells browser this is json instead of html
             self.send_header("Content-type", "application/json")
-            # tells browser this is the end of the http response headers
+            self._send_cors_headers()
             self.end_headers()
-            # writes the json from the backend to the browser
             self.wfile.write(response.content)
 
-        # catches and errors
         except Exception as e:
-            # this status code means our load balancer cant reach our backend
             self.send_response(502)
-            # tells browser this is json instead of html
             self.send_header("Content-type", "application/json")
-            #response headers are done
+            self._send_cors_headers()
             self.end_headers()
             # give you a good error message
             error_msg = f'{{"error": "Could not reach backend server: {str(e)}"}}'
@@ -99,24 +115,23 @@ def health_check():
                 response = requests.get(url, timeout = 2)
                 # If the server responds with HTTP 200, mark it as healthy (True)
                 server_health[url] = response.status_code == 200
-                print(f"Health check: {url} is {'healthy' if healthy else 'unhealthy'}")
+                print(f"Health check: {url} is {'healthy' if server_health[url] else 'unhealthy'}")
             except Exception:
                 # If there's any error (timeout, connection refused, etc.), mark it as unhealthy (False)
                 server_health[url] = False
-                print(f"Health check: {url} is {'healthy' if healthy else 'unhealthy'}")
+                print(f"Health check: {url} is unhealthy")
         # Wait 5 seconds before running the health checks again
         time.sleep(5)
 
 # checks to see if file is being run directly
 # If someone runs this file directly, create a web server on port 8000 that forwards requests using LoadBalancerHandler and never stop unless manually shut down
+class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
+    """Handles each request in a separate thread."""
+
+
 if __name__ == "__main__":
-    # empty string means listen on all avail interfaces; ex. localhost, LAN IP
-    # port number for incoming requests
     server_address = ("", 8000)
-    # creates new http server instance
-    # server address tells the server what port ot listen on
-    # loadbalancer handler custom handler class that defines how to process each incoming request
-    httpd = HTTPServer(server_address, LoadBalancerHandler)
+    httpd = ThreadedHTTPServer(server_address, LoadBalancerHandler)
     # helpful message telling you server is live
     print("Load Balancer running on port 8000...")
     

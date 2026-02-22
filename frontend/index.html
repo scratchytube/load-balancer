@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Load Balancer Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <h1>Load Balancer Dashboard</h1>
+
+  <div class="servers" id="servers"></div>
+
+  <div class="controls">
+    <button class="btn-send" id="sendBtn" onclick="sendRequest()">Send Request</button>
+    <div class="last-response" id="lastResponse"></div>
+  </div>
+
+  <div class="log-section">
+    <div class="log-title">Request Log</div>
+    <div class="log" id="log"></div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
