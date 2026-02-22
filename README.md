@@ -1,46 +1,63 @@
-# Python HTTP Load Balancer
+# Load Balancer
 
-A lightweight HTTP reverse proxy load balancer that distributes requests across multiple backend services and automatically removes unhealthy instances from rotation.
+A Python HTTP load balancer with a real-time monitoring dashboard. Distributes requests across three backend servers using round-robin routing, with automatic health checks and failover.
+
+<!-- Replace with your demo gif once recorded -->
+![Demo](demo.gif)
 
 ## Features
-- Round-robin request routing across backends
-- Active health checks (background polling)
-- Automatic failover when a backend becomes unavailable
-- Forwards GET and POST requests and returns backend responses
-- Returns appropriate errors when backends are unavailable (502 / 503)
 
-## Architecture
+- **Round-robin load balancing** — requests are distributed evenly across all healthy backends
+- **Health checks** — each backend is pinged every 5 seconds; unhealthy servers are automatically removed from rotation
+- **Automatic failover** — if a backend goes down mid-rotation, traffic instantly routes to the remaining healthy servers
+- **Live dashboard** — real-time UI showing server health, kill/start controls, and a request log
 
-  ```text
-  Client
-  ↓
-  Load Balancer (localhost:8000)
-  ↓
-  Backend Servers (localhost:8001–8003)
-  
-  The load balancer routes traffic only to healthy servers.  
-  If a backend stops responding, it is automatically removed from rotation.
-  ```
+## How it works
 
-## Running Locally
+```
+Client → Load Balancer (port 8000) → Backend 1 (port 8001)
+                                    → Backend 2 (port 8002)
+                                    → Backend 3 (port 8003)
+```
 
-  ### 1) Start backend servers
-    Open three terminals:
-    
-    python backends/server1.py
-    python backends/server2.py
-    python backends/server3.py
+A background thread continuously health checks each backend. When a request comes in, the load balancer picks the next healthy server using a round-robin index protected by a threading lock to handle concurrent requests safely.
 
-  ### 2) Start the load balancer
+## Getting started
 
-    python balancer.py
+**Requirements:** Python 3, and the `requests` library (`pip install requests`)
 
-## Testing
-  ```text
-  GET Request
-  curl http://localhost:8000
+```bash
+# Clone the repo
+git clone https://github.com/scratchytube/load-balancer.git
+cd load-balancer
 
-  POST Request
-  curl -X POST http://localhost:8000 -H "Content-Type: text/plain" -d "hello"
+# Start all servers
+python start.py
+```
 
-  
+Then open `frontend/index.html` in your browser.
+
+## Project structure
+
+```
+load-balancer/
+├── load-balancer/
+│   └── load_balancer.py   # Load balancer (port 8000)
+├── backend-servers/
+│   ├── server1.py         # Backend server (port 8001)
+│   ├── server2.py         # Backend server (port 8002)
+│   └── server3.py         # Backend server (port 8003)
+├── frontend/
+│   ├── index.html         # Dashboard
+│   ├── style.css
+│   └── app.js
+└── start.py               # Process manager + management API (port 8004)
+```
+
+## What I'd improve with more time
+
+- Move hardcoded backend URLs and ports into a config file or environment variables
+- Add a dedicated `/health` endpoint on each backend instead of health checking the root path
+- Implement retry logic so a failed request automatically tries the next healthy backend
+- Add structured logging with timestamps and log levels
+- Accept any HTTP method and forward all request headers through to backends
