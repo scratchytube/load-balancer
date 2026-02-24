@@ -53,11 +53,3 @@ load-balancer/
 │   └── app.js
 └── start.py               # Process manager + management API (port 8004)
 ```
-
-## What I'd improve with more time
-
-- Move hardcoded backend URLs and ports into a config file or environment variables
-- Add a dedicated `/health` endpoint on each backend instead of health checking the root path
-- Implement retry logic so a failed request automatically tries the next healthy backend
-- Add structured logging with timestamps and log levels
-- Accept any HTTP method and forward all request headers through to backends
